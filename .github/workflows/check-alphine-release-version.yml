@@ -15,7 +15,7 @@ jobs:
         id: check_release
         run: |
           CURRENT_RELEASE=${{ vars.ALIPINE_CONTAINER_IMAGE_VERSION }}
-          echo "Alpine Current: $CURRENT_RELEASE"
+          echo "Alpine Current: $CURRENT_RELEASE" >> $GITHUB_ENV
           
       - name: Get the latest stable Alpine release from Docker Hub
         id: get_latest_release
