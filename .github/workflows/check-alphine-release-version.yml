@@ -47,4 +47,6 @@ jobs:
     if: ${{ needs.update_release.outputs.update_required == 'true' }}
     steps:
       - name: Update Alpine container
+        run: |
+           echo "Updates Installing"
         # Add steps to perform the update here
