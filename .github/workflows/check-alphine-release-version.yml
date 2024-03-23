@@ -1,0 +1,23 @@
+name: Update Alpine Release
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Runs every Sunday at midnight (00:00 UTC)
+  workflow_dispatch:
+
+jobs:
+  update_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check current Alpine release
+        id: check_release
+        run:  | 
+         echo " Alpine Version: {vars.alpine_container_image_version}"
+      
+      - name: Get the latest stable Alpine release from Docker Hub
+        id: get_latest_release
+        run: |
+          export CURRENT_RELEASE=$INPUT_CURRENT_RELEASE
+          export LATEST_RELEASE=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          echo "::set-output name=latest_release::$LATEST_RELEASE"
+    
