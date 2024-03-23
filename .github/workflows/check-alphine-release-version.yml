@@ -10,6 +10,8 @@ on:
 jobs:
   check_alpine_image:
     runs-on: ubuntu-latest
+    outputs:
+      update_required: ${{ steps.compare_versions.outputs.update_required }}    
     steps:
       - name: Check current Alpine release
         run: |
@@ -29,6 +31,7 @@ jobs:
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
 
       - name: Compare current and latest versions
+        id: compare_versions
         run: |
           CURRENT_VERSION="$CURRENT_VERSION"
           LATEST_RELEASE="$LATEST_RELEASE"
