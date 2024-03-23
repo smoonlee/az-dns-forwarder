@@ -48,7 +48,7 @@ jobs:
   update_alpine:
     needs: check_alpine_image
     runs-on: ubuntu-latest
-    if: ${{ needs.check_alpine_image.outputs.UPDATE_REQUIRED == 'true' }}
+    if: ${{ env.UPDATE_REQUIRED == 'true' }}
     steps:
       - name: Update Alpine
         run: |
