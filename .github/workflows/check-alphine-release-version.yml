@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: Check current Alpine release
         id: check_release
-        run:  | 
-         echo " Alpine Version: {vars.alpine_container_image_version}"
+        run: |
+          echo "Alpine Version: ${{ env.alpine_container_image_version }}"
       
       - name: Get the latest stable Alpine release from Docker Hub
         id: get_latest_release
