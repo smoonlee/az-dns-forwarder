@@ -43,6 +43,7 @@ jobs:
             UPDATE_REQUIRED="false"
           fi
           echo "UPDATE_REQUIRED=$UPDATE_REQUIRED" >> $GITHUB_ENV
+          echo "VARBOOL: $UPDATE_REQUIRED"
 
   update_alpine:
     needs: check_alpine_image
