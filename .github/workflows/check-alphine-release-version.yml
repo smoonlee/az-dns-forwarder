@@ -38,8 +38,10 @@ jobs:
           echo "Current version: $CURRENT_VERSION"
           echo "Latest release: $LATEST_RELEASE"
           if [[ "$CURRENT_VERSION" != "$(echo $LATEST_RELEASE | awk -F'.' '{print $1"."$2"."$3-1}')" ]]; then
+            echo "update_value_true"
             echo "update_required=true" >> $GITHUB_ENV
           else
+            echo "update_value_false"
             echo "update_required=false" >> $GITHUB_ENV
           fi
 
