@@ -29,24 +29,22 @@ jobs:
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
 
       - name: Compare current and latest versions
-        id: compare_versions
         run: |
           CURRENT_VERSION=${{ env.CURRENT_VERSION }}
           LATEST_RELEASE=${{ env.LATEST_RELEASE }}
           echo "Current version: $CURRENT_VERSION"
           echo "Latest release: $LATEST_RELEASE"
           if [[ "$CURRENT_VERSION" != "$(echo $LATEST_RELEASE | awk -F'.' '{print $1"."$2"."$3-1}')" ]]; then
-            echo "::set-output name=update_required::true"
+            echo "update_required=true" >> $GITHUB_ENV
           else
-            echo "::set-output name=update_required::false"
+            echo "update_required=false" >> $GITHUB_ENV
           fi
 
   update_job:
     runs-on: ubuntu-latest
     needs: check_alpine_image
-    if: ${{ needs.check_alpine_image.outputs.update_required == 'true' }}
+    if: ${{ env.update_required == 'true' }}
     steps:
       - name: Update Alpine container
-        run: |
-           echo "Updates Installing"
+          echo "Updating Dockerfile"
         # Add steps to perform the update here
