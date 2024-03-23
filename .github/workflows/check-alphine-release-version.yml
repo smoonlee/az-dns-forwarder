@@ -33,6 +33,12 @@ jobs:
         run: |
           LATEST_VERSION="${{ steps.get_latest_release.outputs.LATEST_RELEASE }}"
           CURRENT_VERSION="${{ steps.check_release.outputs.CURRENT_RELEASE }}"
+
+          echo "debug
+          echo LATEST: $LATEST_VERSION
+          echo CURRENT: $CURRENT_VERSION
+
+          
           if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
             echo "Updating Alpine to $LATEST_VERSION"
             # Perform update steps here
