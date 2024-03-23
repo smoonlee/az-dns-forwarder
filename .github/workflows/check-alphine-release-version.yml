@@ -10,8 +10,6 @@ on:
 jobs:
   check_alpine_image:
     runs-on: ubuntu-latest
-    outputs:
-      update_required: ${{ steps.compare_versions.outputs.update_required }}    
     steps:
       - name: Check current Alpine release
         run: |
@@ -37,23 +35,35 @@ jobs:
           LATEST_RELEASE="$LATEST_RELEASE"
           echo "Current version: $CURRENT_VERSION"
           echo "Latest release: $LATEST_RELEASE"
-          if [[ "$CURRENT_VERSION" != "$(echo $LATEST_RELEASE | awk -F'.' '{print $1"."$2"."$3-1}')" ]]; then
+          if [[ "$CURRENT_VERSION" != "$LATEST_RELEASE" ]]; then
             echo "update_value_true"
-            echo "update_required=true" >> $GITHUB_ENV
+            UPDATE_REQUIRED="true"
           else
             echo "update_value_false"
-            echo "update_required=false" >> $GITHUB_ENV
+            UPDATE_REQUIRED="false"
+          fi
+          echo "UPDATE_REQUIRED=$UPDATE_REQUIRED" >> $GITHUB_ENV
+
+      - name: Compare current and latest versions
+        run: |
+          CURRENT_VERSION="$CURRENT_VERSION"
+          LATEST_RELEASE="$LATEST_RELEASE"
+          echo "Current version: $CURRENT_VERSION"
+          echo "Latest release: $LATEST_RELEASE"
+          if [[ "$CURRENT_VERSION" != "$LATEST_RELEASE" ]]; then
+            echo "update_value_true"
+            echo "UPDATE_REQUIRED=true" >> $GITHUB_ENV
+          else
+            echo "update_value_false"
+            echo "UPDATE_REQUIRED=false" >> $GITHUB_ENV
           fi
 
-  update_job:
-    runs-on: ubuntu-latest
+  update_alpine:
     needs: check_alpine_image
-    if: ${{ needs.check_alpine_image.outputs.update_required == 'true' }}
+    runs-on: ubuntu-latest
+    if: ${{ needs.check_alpine_image.outputs.UPDATE_REQUIRED == 'true' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4.1.2
-        
-      - name: Update Alpine container
-        run: | 
-          echo "Updating Dockerfile"
-        # Add steps to perform the update here
+      - name: Update Alpine
+        run: |
+          # Steps to update Alpine go here
+          echo "Updating Alpine..."
