@@ -18,7 +18,6 @@ jobs:
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
       - name: Get the latest stable Alpine release from Docker Hub
-        id: get_latest_release
         run: |
           set -e
           LATEST_RELEASE=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
@@ -28,13 +27,20 @@ jobs:
           fi
           echo "Alpine Latest Stable: $LATEST_RELEASE"
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
-        
 
-      - name: echo 
-        id: echo_response
-        run: | 
-          echo local: $CURRENT_VERSION
-          echo hub: $LATEST_RELEASE
-          
+        
+      - name: Compare current and latest versions
+        run: |
+          CURRENT_VERSION=${{ env.CURRENT_VERSION }}
+          LATEST_RELEASE=${{ env.LATEST_RELEASE }}
+          echo "Current version: $CURRENT_VERSION"
+          echo "Latest release: $LATEST_RELEASE"
+          if [[ "$CURRENT_VERSION" != "$(echo $LATEST_RELEASE | awk -F'.' '{print $1"."$2"."$3-1}')" ]]; then
+            echo "Update required!"
+            # Add steps to perform the update here
+          else
+            echo "No update required."
+          fi
+
 
       
