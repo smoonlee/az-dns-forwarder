@@ -28,19 +28,23 @@ jobs:
           echo "Alpine Latest Stable: $LATEST_RELEASE"
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
 
-        
       - name: Compare current and latest versions
+        id: compare_versions
         run: |
           CURRENT_VERSION=${{ env.CURRENT_VERSION }}
           LATEST_RELEASE=${{ env.LATEST_RELEASE }}
           echo "Current version: $CURRENT_VERSION"
           echo "Latest release: $LATEST_RELEASE"
           if [[ "$CURRENT_VERSION" != "$(echo $LATEST_RELEASE | awk -F'.' '{print $1"."$2"."$3-1}')" ]]; then
-            echo "Update required!"
-            # Add steps to perform the update here
+            echo "::set-output name=update_required::true"
           else
-            echo "No update required."
+            echo "::set-output name=update_required::false"
           fi
 
-
-      
+  update_job:
+    runs-on: ubuntu-latest
+    needs: update_release
+    if: ${{ needs.update_release.outputs.update_required == 'true' }}
+    steps:
+      - name: Update Alpine container
+        # Add steps to perform the update here
