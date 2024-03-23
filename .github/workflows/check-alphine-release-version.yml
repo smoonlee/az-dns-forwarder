@@ -14,9 +14,10 @@ jobs:
       - name: Check current Alpine release
         id: check_release
         run: |
-          CURRENT_VERSION=${{ vars.alpine_container_image_version }}
+          CURRENT_VERSION=${{ env.alpine_container_image_version }}
           echo "Alpine Current: $CURRENT_VERSION"
-          echo CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+
 
       - name: echo 
         id: echo_response
