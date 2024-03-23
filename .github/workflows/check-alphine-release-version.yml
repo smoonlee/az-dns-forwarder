@@ -14,26 +14,28 @@ jobs:
       - name: Check current Alpine release
         id: check_release
         run: |
-          CURRENT_RELEASE=${{ vars.alpine_container_image_version }}
+          CURRENT_RELEASE=${{ vars.ALIPINE_CONTAINER_IMAGE_VERSION }}
           echo "Alpine Current: $CURRENT_RELEASE"
           
       - name: Get the latest stable Alpine release from Docker Hub
         id: get_latest_release
         run: |
-          LATEST_RELEASE=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
-          echo "Alpine Latest Stable: $LATEST_RELEASE"
-          
-      - name: Compare versions and update if necessary
-        if: ${{ steps.check_release.outputs.CURRENT_RELEASE != steps.get_latest_release.outputs.LATEST_RELEASE }}
-        run: |
-          # Extract major, minor, and patch versions from the release strings
-          CURRENT_MAJOR_MINOR_PATCH=$(echo "${{ steps.check_release.outputs.CURRENT_RELEASE }}" | cut -d '.' -f 1-3)
-          LATEST_MAJOR_MINOR_PATCH=$(echo "${{ steps.get_latest_release.outputs.LATEST_RELEASE }}" | cut -d '.' -f 1-3)
-      
-          # Compare the versions
-          if [ "$CURRENT_MAJOR_MINOR_PATCH" != "$LATEST_MAJOR_MINOR_PATCH" ]; then
-            echo "Versions differ by more than one patch version. Skipping update."
-          else
-            echo "Updating Alpine version from ${{ steps.check_release.outputs.CURRENT_RELEASE }} to ${{ steps.get_latest_release.outputs.LATEST_RELEASE }}"
-            echo "::set-env name=alpine_container_image_version::${{ steps.get_latest_release.outputs.LATEST_RELEASE }}"
+          set -e
+          LATEST_RELEASE=$(curl -s https://registry.hub.docker.com/v1/repositories/library/alpine/tags/latest | jq -r '.name')
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "Failed to fetch latest Alpine release."
+            exit 1
           fi
+          echo "Alpine Latest Stable: $LATEST_RELEASE"
+
+      - name: Compare versions and update if necessary
+        if: ${{ steps.check_release.outputs.CURRENT_RELEASE }} != ${{ steps.get_latest_release.outputs.LATEST_RELEASE }}
+        run: |
+          LATEST_VERSION=$(echo "${{ steps.get_latest_release.outputs.LATEST_RELEASE }}" | cut -d '.' -f 1,2)
+          CURRENT_VERSION=$(echo "${{ steps.check_release.outputs.CURRENT_RELEASE }}" | cut -d '.' -f 1,2)
+          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "Updating Alpine to ${{ steps.get_latest_release.outputs.LATEST_RELEASE }}"
+            # Perform update steps here
+          else
+            echo "No update needed. Current version is up to date."
+          fi          
