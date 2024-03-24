@@ -60,6 +60,9 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4.1.2
+        with:
+          sparse-checkout: |
+            docker
 
       - name: Check Local Directory
         run: |
