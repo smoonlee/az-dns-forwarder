@@ -55,6 +55,9 @@ jobs:
     needs: check_alpine_image
     runs-on: ubuntu-latest
     steps:
+      - name: Debug LATEST_RELEASE in update_alpine
+        run: echo "LATEST_RELEASE=${{ env.LATEST_RELEASE }}"
+
       - name: Checkout repository
         uses: actions/checkout@v4.1.2
 
