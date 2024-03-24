@@ -57,9 +57,13 @@ jobs:
     steps:
       - name: Debug LATEST_RELEASE in update_alpine
         run: echo "LATEST_RELEASE=${{ env.LATEST_RELEASE }}"
-
+  
       - name: Checkout repository
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docker
+
 
       - name: Check Local Directory
         run: |
