@@ -14,7 +14,7 @@ This Container can be deployed and exposed internally with Azure Kubernetes Serv
 You need to make sure that all needed private Azure DNS zones are linked to the virtual network used for AKS. Without this, the DNS forwarder will not be able to resolve them.
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/whiteducksoftware/az-dns-forwarder/master/deploy.yaml
+kubectl apply -f https://github.com/smoonlee/az-dns-forwarder/master/deploy.yaml
 ```
 
 This will deploy the Azure DNS Forwarder container as Deployment with 3 replicas. It also creates a LoadBalancer service using an internal Azure Loadbalancer to expose the DNS forwarder internally. 
