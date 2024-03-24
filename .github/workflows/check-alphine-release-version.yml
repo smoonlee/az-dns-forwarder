@@ -61,4 +61,4 @@ jobs:
           # Steps to update Alpine go here
           echo "Updating Alpine..."
 
-          echo latest: $LATEST_RELEASE
+          echo latest: "${{ env.LATEST_RELEASE }}"
