@@ -67,7 +67,7 @@ jobs:
               ls 
             
             echo ""
-            echo "Root Directory [$PWD/docker]"
+            echo "Docker Directory [$PWD/docker]"
               ls $PWD/docker              
               
       - name: Update Alpine
