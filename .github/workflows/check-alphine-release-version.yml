@@ -45,6 +45,12 @@ jobs:
           echo "UPDATE_REQUIRED=$UPDATE_REQUIRED" >> $GITHUB_ENV
           echo "VARBOOL: $UPDATE_REQUIRED"
 
+      - name: Pass variables to update_alpine job
+        if: always()
+        run: |
+          echo "LATEST_RELEASE=${{ env.LATEST_RELEASE }}" >> $GITHUB_ENV
+          echo "UPDATE_REQUIRED=${{ env.UPDATE_REQUIRED }}" >> $GITHUB_ENV
+
   update_alpine:
     needs: check_alpine_image
     runs-on: ubuntu-latest
