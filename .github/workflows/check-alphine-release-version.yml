@@ -19,7 +19,7 @@ jobs:
       id: current_version
       run: echo "version=${{vars.alpine_container_image_version}}" >> "$GITHUB_OUTPUT"
     
-    - name Get Latest version of Alpina Linux
+    - name: Get Latest version of Alpina Linux
       id: step2
       run: echo "test=world" >> "$GITHUB_OUTPUT"
   job2:
