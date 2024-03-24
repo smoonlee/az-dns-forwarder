@@ -16,8 +16,9 @@ jobs:
       output2: ${{ steps.step2.outputs.test }}
     steps:
     - name: Get Current Version of Alpine Linux
-    - id: step1
+      id: step1
       run: echo "test=${{vars.alpine_container_image_version}}" >> "$GITHUB_OUTPUT"
+    
     - id: step2
       run: echo "test=world" >> "$GITHUB_OUTPUT"
   job2:
