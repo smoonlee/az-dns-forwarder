@@ -26,6 +26,18 @@ jobs:
         latestRelease=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
         echo Stable Release: $latestRelease
         echo "version=$latestRelease" >> "$GITHUB_OUTPUT"
+
+    - name: Compare Current to Latest Stable
+      id: compare_versions
+      run: |
+        if [ "${{ steps.current_version.outputs.version }}" != "${{ steps.stable_release.outputs.version }}" ]; then
+          echo "Versions mismatched, updating..."
+          echo "::set-output name=update_required::true"
+        else
+          echo "Versions matched, no update required."
+          echo "::set-output name=update_required::false"
+        fi     
+          
   job2:
     runs-on: ubuntu-latest
     needs: job1
