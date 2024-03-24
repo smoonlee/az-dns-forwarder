@@ -20,3 +20,12 @@ jobs:
           echo "Checking Repository Variable"
           echo "version: ${{ vars.alpine_container_image_version }}"
           echo "version=${{ vars.alpine_container_image_version }}" >> GITHUB_OUTPUT
+
+  update_alpine:
+     runs-on: ubuntu-latest
+     needs: check_alpine_version
+     steps:
+       - name: next step
+         run: |
+            echo ${needs.check_alpine_version.outputs.outputs1}
+  
