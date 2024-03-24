@@ -10,10 +10,13 @@ on:
 jobs: 
   check_alpine_version:
     runs-on: ubuntu-latest
+    outputs: 
+      output1: ${{steps.get_current_version.output.version}}
 
     steps:
       - name: Get Current Version 
+        id: get_current_version
         run: | 
           echo "Checking Repository Variable"
           echo "version: ${{ vars.alpine_container_image_version }}"
-        
+          echo "version=${{ vars.alpine_container_image_version }}" >> GITHUB_OUTPUT
