@@ -48,9 +48,17 @@ jobs:
   update_alpine:
     needs: check_alpine_image
     runs-on: ubuntu-latest
-    if: ${{ env.UPDATE_REQUIRED == 'true' }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.2
+
+      - name: Check Local Directory
+        run: |
+              ls 
+              
       - name: Update Alpine
         run: |
           # Steps to update Alpine go here
           echo "Updating Alpine..."
+
+          echo latest: $LATEST_RELEASE
