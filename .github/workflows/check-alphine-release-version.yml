@@ -13,15 +13,19 @@ jobs:
     # Expose step outputs as job outputs
     outputs:
       output1: ${{ steps.current_version.outputs.version }}
-      output2: ${{ steps.step2.outputs.test }}
+      output2: ${{ steps.stable_release.outputs.version }}
     steps:
     - name: Get Current version of Alpine Linux
       id: current_version
-      run: echo "version=${{vars.alpine_container_image_version}}" >> "$GITHUB_OUTPUT"
+      run: |
+        echo "version=${{vars.alpine_container_image_version}}" >> "$GITHUB_OUTPUT"
     
     - name: Get Latest version of Alpina Linux
-      id: step2
-      run: echo "test=world" >> "$GITHUB_OUTPUT"
+      id: stable_release
+      run: |
+        latestRelease=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+        echo Stable Release: $latestRelease
+        echo "version=$latestRelease" >> "$GITHUB_OUTPUT"
   job2:
     runs-on: ubuntu-latest
     needs: job1
