@@ -12,14 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     # Expose step outputs as job outputs
     outputs:
-      output1: ${{ steps.step1.outputs.version }}
+      output1: ${{ steps.current_version.outputs.version }}
       output2: ${{ steps.step2.outputs.test }}
     steps:
-    - name: Get Current Version of Alpine Linux
-      id: step1
+    - name: Get Current version of Alpine Linux
+      id: current_version
       run: echo "version=${{vars.alpine_container_image_version}}" >> "$GITHUB_OUTPUT"
     
-    - id: step2
+    - name Get Latest version of Alpina Linux
+      id: step2
       run: echo "test=world" >> "$GITHUB_OUTPUT"
   job2:
     runs-on: ubuntu-latest
