@@ -7,72 +7,13 @@ on:
     - cron: '0 0 * * 0'  # Runs every Sunday at midnight (00:00 UTC)
   workflow_dispatch:
 
-jobs:
-  check_alpine_image:
+jobs: 
+  check_alpine_version:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check current Alpine release
-        run: |
-          CURRENT_VERSION="${{ vars.alpine_container_image_version }}"
-          echo "Alpine Current: $CURRENT_VERSION"
-          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
-
-      - name: Get the latest stable Alpine release from Docker Hub
-        run: |
-          set -e
-          LATEST_RELEASE=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
-          if [ -z "$LATEST_RELEASE" ]; then
-            echo "Failed to fetch latest Alpine release."
-            exit 1
-          fi
-          echo "Alpine Latest Stable: $LATEST_RELEASE"
-          echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
-
-      - name: Compare current and latest versions
-        id: compare_versions
-        run: |
-          CURRENT_VERSION="$CURRENT_VERSION"
-          LATEST_RELEASE="$LATEST_RELEASE"
-          echo "Current version: $CURRENT_VERSION"
-          echo "Latest release: $LATEST_RELEASE"
-          if [[ "$CURRENT_VERSION" != "$LATEST_RELEASE" ]]; then
-            echo "update_value_true"
-            UPDATE_REQUIRED="true"
-          else
-            echo "update_value_false"
-            UPDATE_REQUIRED="false"
-          fi
-          echo "UPDATE_REQUIRED=$UPDATE_REQUIRED" >> $GITHUB_ENV
-          echo "VARBOOL: $UPDATE_REQUIRED"
-
-      - name: Pass variables to update_alpine job
-        if: always()
-        run: |
-          echo "LATEST_RELEASE=${{ env.LATEST_RELEASE }}" >> $GITHUB_ENV
-          echo "UPDATE_REQUIRED=${{ env.UPDATE_REQUIRED }}" >> $GITHUB_ENV
-
-  update_alpine:
-    needs: check_alpine_image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug LATEST_RELEASE in update_alpine
-        run: echo "LATEST_RELEASE=${{ env.LATEST_RELEASE }}"
-  
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check Local Directory
-        run: |
-            echo "Root Directory [$PWD]"
-              ls 
-            
-            echo ""
-            echo "Docker Directory [$PWD/docker]"
-              ls $PWD/docker              
-              
-      - name: Update Alpine
-        run: |
-          # Steps to update Alpine go here
-          echo "Updating Alpine..."
-
-          echo latest: "${{ env.LATEST_RELEASE }}"
+      - name: Get Current Version 
+        run: | 
+          echo "Checking Repository Variable"
+          echo "version: ${{ vars.alpine_container_image_version }}"
+        
