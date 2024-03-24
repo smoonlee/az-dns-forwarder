@@ -54,7 +54,7 @@ jobs:
 
       - name: Check Local Directory
         run: |
-            echo: Directory [$PWD]
+            echo "Directory [$PWD]"
               ls 
               
       - name: Update Alpine
