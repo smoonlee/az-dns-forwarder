@@ -13,6 +13,8 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    outputs:
+      latest_alpine_version: ${{ steps.get_latest_alpine_version.outputs.latest_alpine_version }} # Output Alpine version for next job
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -52,8 +54,8 @@ jobs:
           echo "Latest Alpine version: $latest_version"
           echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
           
-          # Set the output for the next job
-          echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
+          # Set output for the next job
+          echo "::set-output name=latest_alpine_version::$latest_version"
 
       - name: Compare Versions and Update Dockerfile
         id: update_dockerfile
@@ -101,7 +103,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          # Use the output from the previous job
           image_name="ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ needs.update_dockerfile.outputs.latest_alpine_version }}"
+          if [ -z "$image_name" ]; then
+            echo "Error: Image name format is incorrect."
+            exit 1
+          fi
           docker build -t "$image_name" docker/
           echo "image_name=$image_name" >> $GITHUB_ENV
 
