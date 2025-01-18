@@ -17,10 +17,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Ensure jq is installed
+        run: sudo apt-get install -y jq
+
       - name: Extract Alpine Version
         id: extract_alpine_version
         run: |
           dockerfile_path="docker/Dockerfile"
+          if [ ! -f "$dockerfile_path" ]; then
+            echo "Error: Dockerfile not found at $dockerfile_path."
+            exit 1
+          fi
           # Extract the version from the Dockerfile
           version=$(grep -oP 'FROM alpine:\K[0-9]+\.[0-9]+' "$dockerfile_path")
           if [ -z "$version" ]; then
