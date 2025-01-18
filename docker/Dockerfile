@@ -1,7 +1,7 @@
 FROM alpine:3.21
 
-LABEL maintainer="nico.meisenzahl@whiteduck.de" \
-org.label-schema.vcs-url="https://github.com/whiteducksoftware/az-dns-forwarder"
+LABEL maintainer="github@builtwithcaffeine.cloud" \
+org.label-schema.vcs-url="https://github.com/smoonlee/az-dns-forwarder"
 
 ADD named.conf /etc/bind/
 
