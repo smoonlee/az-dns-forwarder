@@ -51,6 +51,9 @@ jobs:
           fi
           echo "Latest Alpine version: $latest_version"
           echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
+          
+          # Set the output for the next job
+          echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
 
       - name: Compare Versions and Update Dockerfile
         id: update_dockerfile
@@ -98,7 +101,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          image_name="ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ env.latest_alpine_version }}"
+          image_name="ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ needs.update_dockerfile.outputs.latest_alpine_version }}"
           docker build -t "$image_name" docker/
           echo "image_name=$image_name" >> $GITHUB_ENV
 
