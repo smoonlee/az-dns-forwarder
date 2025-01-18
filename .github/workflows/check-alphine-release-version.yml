@@ -47,10 +47,13 @@ jobs:
         id: update_dockerfile
         run: |
           dockerfile_path="docker/Dockerfile"
-          if [ "${{ env.alpine_version }}" != "${{ env.latest_alpine_version }}" ]; then
-            echo "Updating Dockerfile from Alpine ${{ env.alpine_version }} to ${{ env.latest_alpine_version }}."
+          alpine_version="${{ env.alpine_version }}"
+          latest_alpine_version="${{ env.latest_alpine_version }}"
+
+          if [ "$alpine_version" != "$latest_alpine_version" ]; then
+            echo "Updating Dockerfile from Alpine $alpine_version to $latest_alpine_version."
             # Update the Dockerfile
-            sed -i "s/FROM alpine:${{ env.alpine_version }}/FROM alpine:${{ env.latest_alpine_version }}/" "$dockerfile_path"
+            sed -i "s/FROM alpine:$alpine_version/FROM alpine:$latest_alpine_version/" "$dockerfile_path"
 
             # Output the updated Dockerfile for verification
             echo "Updated Dockerfile contents:"
@@ -60,6 +63,7 @@ jobs:
           else
             echo "Alpine version is already up-to-date."
             echo "needs_push=false" >> $GITHUB_ENV
+
 
       - name: Push Changes
         if: env.needs_push == 'true'
