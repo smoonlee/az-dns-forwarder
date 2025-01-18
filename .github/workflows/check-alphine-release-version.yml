@@ -63,8 +63,8 @@ jobs:
           else
             echo "Alpine version is already up-to-date."
             echo "needs_push=false" >> $GITHUB_ENV
-
-
+          fi
+        
       - name: Push Changes
         if: env.needs_push == 'true'
         run: |
