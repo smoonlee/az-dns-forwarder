@@ -12,46 +12,59 @@ jobs:
   check_alpine_version:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Extract Alpine Version
         id: extract_alpine_version
         run: |
+          dockerfile_path="docker/Dockerfile"
           # Extract the version from the Dockerfile
-          version=$(grep -oP 'FROM alpine:\K[0-9]+\.[0-9]+' docker/Dockerfile)
-          echo "Alpine version: $version"
-          # Set the version as an output
+          version=$(grep -oP 'FROM alpine:\K[0-9]+\.[0-9]+' "$dockerfile_path")
+          if [ -z "$version" ]; then
+            echo "Error: Failed to extract Alpine version from $dockerfile_path."
+            exit 1
+          fi
+          echo "Alpine version in Dockerfile: $version"
           echo "alpine_version=$version" >> $GITHUB_ENV
 
       - name: Get Latest Alpine Version
         id: get_latest_alpine_version
         run: |
           # Fetch the latest Alpine version
-          latest_version=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          latest_version=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 \
+            | jq -r '.results[].name' \
+            | grep -E '^[0-9]+\.[0-9]+$' \
+            | sort -Vr | head -n 1)
+          if [ -z "$latest_version" ]; then
+            echo "Error: Failed to fetch the latest Alpine version."
+            exit 1
+          fi
           echo "Latest Alpine version: $latest_version"
-          # Set the latest version as an environment variable
           echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
 
       - name: Compare Versions and Update Dockerfile
         id: update_dockerfile
         run: |
+          dockerfile_path="docker/Dockerfile"
           if [ "${{ env.alpine_version }}" != "${{ env.latest_alpine_version }}" ]; then
             echo "Updating Dockerfile from Alpine ${{ env.alpine_version }} to ${{ env.latest_alpine_version }}."
             # Update the Dockerfile
-            sed -i "s/FROM alpine:${{ env.alpine_version }}/FROM alpine:${{ env.latest_alpine_version }}/" docker/Dockerfile
+            sed -i "s/FROM alpine:${{ env.alpine_version }}/FROM alpine:${{ env.latest_alpine_version }}/" "$dockerfile_path"
 
             # Output the updated Dockerfile for verification
             echo "Updated Dockerfile contents:"
-            cat docker/Dockerfile
+            cat "$dockerfile_path"
+            
+            echo "needs_push=true" >> $GITHUB_ENV
           else
             echo "Alpine version is already up-to-date."
-          fi
+            echo "needs_push=false" >> $GITHUB_ENV
 
       - name: Push Changes
-        if: steps.update_dockerfile.outcome == 'success'
-        run:
-          # Commit the changes
+        if: env.needs_push == 'true'
+        run: |
+          # Commit and push the changes
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docker/Dockerfile
