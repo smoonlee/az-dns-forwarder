@@ -23,3 +23,38 @@ jobs:
           echo "Alpine version: $version"
           # Set the version as an output
           echo "alpine_version=$version" >> $GITHUB_ENV
+
+      - name: Get Latest Alpine Version
+        id: get_latest_alpine_version
+        run: |
+          # Fetch the latest Alpine version
+          latest_version=$(curl -s https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases.json | jq -r '.[] | select(.arch=="x86_64") | .version' | sort -Vr | head -n 1)
+          echo "Latest Alpine version: $latest_version"
+          # Set the latest version as an environment variable
+          echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
+
+      - name: Compare Versions and Update Dockerfile
+        id: update_dockerfile
+        run: |
+          if [ "${{ env.alpine_version }}" != "${{ env.latest_alpine_version }}" ]; then
+            echo "Updating Dockerfile from Alpine ${{ env.alpine_version }} to ${{ env.latest_alpine_version }}."
+            # Update the Dockerfile
+            sed -i "s/FROM alpine:${{ env.alpine_version }}/FROM alpine:${{ env.latest_alpine_version }}/" docker/Dockerfile
+
+            # Output the updated Dockerfile for verification
+            echo "Updated Dockerfile contents:"
+            cat src/Dockerfile
+            
+            # Commit the changes
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add src/Dockerfile
+            git commit -m "Update Alpine version to ${{ env.latest_alpine_version }}"
+          else
+            echo "Alpine version is already up-to-date."
+          fi
+
+      - name: Push Changes
+        if: steps.update_dockerfile.outcome == 'success'
+        run: |
+          git push
