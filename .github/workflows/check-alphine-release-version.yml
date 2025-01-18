@@ -43,7 +43,7 @@ jobs:
 
             # Output the updated Dockerfile for verification
             echo "Updated Dockerfile contents:"
-            cat src/Dockerfile
+            cat docker/Dockerfile
             
             # Commit the changes
             git config --global user.name "github-actions[bot]"
