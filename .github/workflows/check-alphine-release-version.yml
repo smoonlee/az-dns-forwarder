@@ -1,4 +1,4 @@
-name: Update Alpine Release
+name: Update Alpine Release and Build Image
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  check_alpine_version:
+  update_dockerfile:
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
             echo "Alpine version is already up-to-date."
             echo "needs_push=false" >> $GITHUB_ENV
           fi
-        
+
       - name: Push Changes
         if: env.needs_push == 'true'
         run: |
@@ -75,3 +75,27 @@ jobs:
           git add docker/Dockerfile
           git commit -m "Update Alpine version to ${{ env.latest_alpine_version }}"
           git push
+
+  build_and_push_image:
+    needs: update_dockerfile
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.authToken }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          image_name="ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ env.latest_alpine_version }}"
+          docker build -t "$image_name" docker/
+          echo "image_name=$image_name" >> $GITHUB_ENV
+
+      - name: Push Docker Image
+        run: |
+          image_name="${{ env.image_name }}"
+          docker push "$image_name"
