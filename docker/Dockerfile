@@ -1,4 +1,4 @@
-FROM alpine:3.23.3
+FROM alpine:3.23.2
 
 RUN apk add --no-cache bind \
     && mkdir -p /var/cache/bind \
@@ -6,6 +6,7 @@ RUN apk add --no-cache bind \
     && chown -R named:named /var/cache/bind /var/run/named /etc/bind
 
 COPY named.conf /etc/bind/named.conf
+RUN chown named:named /etc/bind/named.conf
 
 USER named
 
