@@ -86,7 +86,8 @@ jobs:
             sed -i -E \
               "0,/^FROM[[:space:]]+alpine:[^[:space:]]+/s//FROM alpine:${latest_alpine_version}/" \
               "$dockerfile_path"
-      
+
+            echo "" # Verbose Spacing
             echo "Updated Dockerfile:"
             cat "$dockerfile_path"
       
@@ -106,9 +107,6 @@ jobs:
           # Configure Git identity (local only)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
-          # Ensure we are up to date
-          git pull --rebase origin main
       
           # Add only if file changed
           git add docker/Dockerfile
