@@ -10,11 +10,13 @@ on:
 
 jobs:
   update_dockerfile:
+    name: 'Update DockerFile'
     permissions:
       contents: write
     runs-on: ubuntu-24.04
     outputs:
-      latest_alpine_version: ${{ steps.get_latest_alpine_version.outputs.latest_alpine_version }} # Output Alpine version for next job
+      latest_alpine_version: ${{ steps.get_latest_alpine_version.outputs.latest_alpine_version }}
+      needs_push: ${{ steps.update_dockerfile.outputs.needs_push }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6.0.0
@@ -121,17 +123,23 @@ jobs:
           git push origin main
 
   build_and_push_image:
-    needs: update_dockerfile
+    name: 'Build and Push Image'
     permissions:
       contents: read
       packages: write
+    needs: update_dockerfile
+    if: needs.update_dockerfile.outputs.needs_push == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.authToken }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+      - name: Log in to GitHub Container Registry  
+        uses: docker/login-action@v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6.19.0
@@ -140,5 +148,3 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:${{ needs.update_dockerfile.outputs.latest_alpine_version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
