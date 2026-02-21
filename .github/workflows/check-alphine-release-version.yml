@@ -1,92 +1,124 @@
-name: Update Alpine Release and Build Image
+name: 'Update Alpine Release and Build Image'
 
 on:
   push:
     branches:
       - main
   schedule:
-    - cron: '0 0 * * 0'  # Runs every Sunday at midnight (00:00 UTC)
+    - cron: '0 2 * * 0'
   workflow_dispatch:
 
 jobs:
   update_dockerfile:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       latest_alpine_version: ${{ steps.get_latest_alpine_version.outputs.latest_alpine_version }} # Output Alpine version for next job
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Ensure jq is installed
-        run: sudo apt-get install -y jq
+        uses: actions/checkout@v6.0.0
 
       - name: Extract Alpine Version
         id: extract_alpine_version
         run: |
+          set -euo pipefail
+      
           dockerfile_path="docker/Dockerfile"
+      
           if [ ! -f "$dockerfile_path" ]; then
             echo "Error: Dockerfile not found at $dockerfile_path."
             exit 1
           fi
-          # Extract the version from the Dockerfile
-          version=$(grep -oP 'FROM alpine:\K[0-9]+\.[0-9]+' "$dockerfile_path")
-          if [ -z "$version" ]; then
-            echo "Error: Failed to extract Alpine version from $dockerfile_path."
+      
+          # Extract first FROM alpine line
+          from_line=$(grep -E '^FROM[[:space:]]+alpine:' "$dockerfile_path" | head -n 1)
+      
+          if [ -z "$from_line" ]; then
+            echo "Error: No Alpine base image found in Dockerfile."
             exit 1
           fi
+      
+          # Extract version safely
+          version=$(echo "$from_line" | sed -E 's/^FROM[[:space:]]+alpine:([^[:space:]]+).*/\1/')
+      
           echo "Alpine version in Dockerfile: $version"
-          echo "alpine_version=$version" >> $GITHUB_ENV
+      
+          echo "alpine_version=$version" >> "$GITHUB_ENV"
+          echo "alpine_version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Get Latest Alpine Version
         id: get_latest_alpine_version
         run: |
-          # Fetch the latest Alpine version
-          latest_version=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=100 \
+          set -euo pipefail
+      
+          latest_version=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags/?page_size=200 \
             | jq -r '.results[].name' \
-            | grep -E '^[0-9]+\.[0-9]+$' \
-            | sort -Vr | head -n 1)
+            | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' \
+            | sort -V \
+            | tail -n 1)
+      
           if [ -z "$latest_version" ]; then
             echo "Error: Failed to fetch the latest Alpine version."
             exit 1
           fi
+      
           echo "Latest Alpine version: $latest_version"
-          echo "latest_alpine_version=$latest_version" >> $GITHUB_ENV
-          
-          # Set output for the next job
-          echo "::set-output name=latest_alpine_version::$latest_version"
+      
+          echo "latest_alpine_version=$latest_version" >> "$GITHUB_ENV"
+          echo "latest_alpine_version=$latest_version" >> "$GITHUB_OUTPUT"
 
       - name: Compare Versions and Update Dockerfile
         id: update_dockerfile
         run: |
+          set -euo pipefail
+      
           dockerfile_path="docker/Dockerfile"
           alpine_version="${{ env.alpine_version }}"
           latest_alpine_version="${{ env.latest_alpine_version }}"
-
+      
           if [ "$alpine_version" != "$latest_alpine_version" ]; then
             echo "Updating Dockerfile from Alpine $alpine_version to $latest_alpine_version."
-            # Update the Dockerfile
-            sed -i "s/FROM alpine:$alpine_version/FROM alpine:$latest_alpine_version/" "$dockerfile_path"
-
-            # Output the updated Dockerfile for verification
+      
+            # Replace any alpine version in first FROM statement
+            sed -i -E \
+              "0,/^FROM[[:space:]]+alpine:[^[:space:]]+/s//FROM alpine:${latest_alpine_version}/" \
+              "$dockerfile_path"
+      
+            echo "Updated Dockerfile:"
             cat "$dockerfile_path"
-            
-            echo "needs_push=true" >> $GITHUB_ENV
+      
+            echo "needs_push=true" >> "$GITHUB_ENV"
+            echo "needs_push=true" >> "$GITHUB_OUTPUT"
           else
             echo "Alpine version is already up-to-date."
-            echo "needs_push=false" >> $GITHUB_ENV
+            echo "needs_push=false" >> "$GITHUB_ENV"
+            echo "needs_push=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Push Changes
-        if: env.needs_push == 'true'
+        if: steps.update_dockerfile.outputs.needs_push == 'true'
         run: |
-          # Commit and push the changes
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          set -euo pipefail
+      
+          # Configure Git identity (local only)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+          # Ensure we are up to date
+          git pull --rebase origin main
+      
+          # Add only if file changed
           git add docker/Dockerfile
-          git commit -m "Update Alpine version to ${{ env.latest_alpine_version }}"
-          git push
+      
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+      
+          git commit -m "[Github Automation]: update Alpine to ${{ env.latest_alpine_version }}"
+      
+          git push origin main
 
   build_and_push_image:
     needs: update_dockerfile
@@ -101,18 +133,12 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.authToken }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
-      - name: Build Docker Image
-        run: |
-          # Use the output from the previous job
-          image_name="ghcr.io/${{ github.repository_owner }}/${{ github.repository }}:${{ needs.update_dockerfile.outputs.latest_alpine_version }}"
-          if [ -z "$image_name" ]; then
-            echo "Error: Image name format is incorrect."
-            exit 1
-          fi
-          docker build -t "$image_name" docker/
-          echo "image_name=$image_name" >> $GITHUB_ENV
-
-      - name: Push Docker Image
-        run: |
-          image_name="${{ env.image_name }}"
-          docker push "$image_name"
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6.19.0
+        with:
+          context: docker/
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ needs.update_dockerfile.outputs.latest_alpine_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
