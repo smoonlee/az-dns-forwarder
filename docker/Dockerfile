@@ -1,13 +1,13 @@
-FROM alpine:3.21
+FROM alpine:3.23.3
 
-LABEL maintainer="github@builtwithcaffeine.cloud" \
-org.label-schema.vcs-url="https://github.com/smoonlee/az-dns-forwarder"
+RUN apk add --no-cache bind \
+    && mkdir -p /etc/bind /var/cache/bind /var/run/named \
+    && chown -R named:named /etc/bind /var/cache/bind /var/run/named
 
-ADD named.conf /etc/bind/
+COPY named.conf /etc/bind/named.conf
 
-RUN apk add --no-cache bind && \
-    rm -rf /var/cache/apk/*
+USER named
 
-EXPOSE 53/udp
+EXPOSE 53/udp 53/tcp
 
-ENTRYPOINT ["/usr/sbin/named", "-f", "-g"]
+ENTRYPOINT ["/usr/sbin/named", "-f", "-g", "-u", "named"]
