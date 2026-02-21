@@ -1,4 +1,4 @@
-FROM alpine:3.23.3
+FROM alpine:3.23.1
 
 RUN apk add --no-cache bind \
     && mkdir -p /var/cache/bind \
