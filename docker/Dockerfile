@@ -1,14 +1,10 @@
-FROM alpine:3.23.3
+FROM alpine:3.23.2
 
 RUN apk add --no-cache bind \
     && mkdir -p /var/cache/bind \
-    && mkdir -p /var/run/named \
-    && chown -R named:named /var/cache/bind /var/run/named /etc/bind
+    && mkdir -p /var/run/named
 
 COPY named.conf /etc/bind/named.conf
-RUN chown named:named /etc/bind/named.conf
-
-USER named
 
 EXPOSE 53/udp 53/tcp
 
