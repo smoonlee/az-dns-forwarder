@@ -1,4 +1,4 @@
-FROM alpine:3.23.1
+FROM alpine:3.23.2
 
 RUN apk add --no-cache bind \
     && mkdir -p /var/cache/bind \
@@ -9,6 +9,6 @@ COPY named.conf /etc/bind/named.conf
 
 USER named
 
-EXPOSE 5353/udp 5353/tcp
+EXPOSE 53/udp 53/tcp
 
 ENTRYPOINT ["/usr/sbin/named", "-g", "-c", "/etc/bind/named.conf"]
