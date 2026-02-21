@@ -1,4 +1,4 @@
-FROM alpine:3.21
+FROM alpine:3.23
 
 LABEL maintainer="github@builtwithcaffeine.cloud" \
 org.label-schema.vcs-url="https://github.com/smoonlee/az-dns-forwarder"
