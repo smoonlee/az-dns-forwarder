@@ -19,33 +19,33 @@ jobs:
       needs_push: ${{ steps.update_dockerfile.outputs.needs_push }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Extract Alpine Version
         id: extract_alpine_version
         run: |
           set -euo pipefail
-      
+
           dockerfile_path="docker/Dockerfile"
-      
+
           if [ ! -f "$dockerfile_path" ]; then
             echo "Error: Dockerfile not found at $dockerfile_path."
             exit 1
           fi
-      
+
           # Extract first FROM alpine line
           from_line=$(grep -E '^FROM[[:space:]]+alpine:' "$dockerfile_path" | head -n 1)
-      
+
           if [ -z "$from_line" ]; then
             echo "Error: No Alpine base image found in Dockerfile."
             exit 1
           fi
-      
+
           # Extract version safely
           version=$(echo "$from_line" | sed -E 's/^FROM[[:space:]]+alpine:([^[:space:]]+).*/\1/')
-      
+
           echo "Alpine version in Dockerfile: $version"
-      
+
           echo "alpine_version=$version" >> "$GITHUB_ENV"
           echo "alpine_version=$version" >> "$GITHUB_OUTPUT"
 
@@ -53,20 +53,20 @@ jobs:
         id: get_latest_alpine_version
         run: |
           set -euo pipefail
-      
+
           latest_version=$(curl -s https://hub.docker.com/v2/repositories/library/alpine/tags \
             | jq -r '.results[].name' \
             | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' \
             | sort -V \
             | tail -n 1)
-      
+
           if [ -z "$latest_version" ]; then
             echo "Error: Failed to fetch the latest Alpine version."
             exit 1
           fi
-      
+
           echo "Latest Alpine version: $latest_version"
-      
+
           echo "latest_alpine_version=$latest_version" >> "$GITHUB_ENV"
           echo "latest_alpine_version=$latest_version" >> "$GITHUB_OUTPUT"
 
@@ -74,15 +74,15 @@ jobs:
         id: update_dockerfile
         run: |
           set -euo pipefail
-      
+
           dockerfile_path="docker/Dockerfile"
           alpine_version="${{ env.alpine_version }}"
           latest_alpine_version="${{ env.latest_alpine_version }}"
-      
+
           if [ "$alpine_version" != "$latest_alpine_version" ]; then
             echo "" # Verbose Spacing
             echo "Updating Dockerfile from Alpine $alpine_version to $latest_alpine_version."
-      
+
             # Replace any alpine version in first FROM statement
             sed -i -E \
               "0,/^FROM[[:space:]]+alpine:[^[:space:]]+/s//FROM alpine:${latest_alpine_version}/" \
@@ -91,7 +91,7 @@ jobs:
             echo "" # Verbose Spacing
             echo "Updated Dockerfile:"
             cat "$dockerfile_path"
-      
+
             echo "needs_push=true" >> "$GITHUB_ENV"
             echo "needs_push=true" >> "$GITHUB_OUTPUT"
           else
@@ -104,21 +104,21 @@ jobs:
         if: steps.update_dockerfile.outputs.needs_push == 'true'
         run: |
           set -euo pipefail
-      
+
           # Configure Git identity (local only)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
+
           # Add only if file changed
           git add docker/Dockerfile
-      
+
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-      
+
           git commit -m "[GitHub Automation]: update Alpine to ${{ env.latest_alpine_version }}"
-      
+
           git push origin main
 
   build_and_push_image:
@@ -131,17 +131,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Log in to GitHub Container Registry  
-        uses: docker/login-action@v4.4.0
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v7.3.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: docker/
           push: true
